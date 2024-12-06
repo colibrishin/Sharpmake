@@ -2029,7 +2029,7 @@ namespace Sharpmake
     }
 
     [Sharpmake.Generate]
-    internal class FastBuildAllProject : Project
+    public class FastBuildAllProject : Project
     {
         public FastBuildAllProject(Type targetType)
             : base(targetType, typeof(Project.Configuration), true)

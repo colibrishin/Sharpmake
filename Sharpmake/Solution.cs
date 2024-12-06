@@ -38,6 +38,8 @@ namespace Sharpmake
         /// </summary>
         public bool GenerateFastBuildAllProject = true;
 
+        public Type FastBuildAllProjectType = typeof(FastBuildAllProject);
+
         public string FastBuildAllProjectName = "[solution.Name]_All";
         public string FastBuildAllProjectFileSuffix = "_All"; // the fastbuild all project will be named after the solution, but the suffix can be custom. Warning: this cannot be empty!
 
@@ -562,14 +564,12 @@ namespace Sharpmake
                         var firstProject = projectConfigsToBuild.First();
 
                         // Use the target type from the current solution configuration, as they all should have the same anyway
-                        fastBuildAllProject = new FastBuildAllProject(solutionConf.Target.GetType())
-                        {
-                            Name = FastBuildAllProjectName,
-                            RootPath = firstProject.Project.RootPath,
-                            SourceRootPath = firstProject.Project.RootPath,
-                            IsFileNameToLower = firstProject.Project.IsFileNameToLower,
-                            SharpmakeProjectType = Project.ProjectTypeAttribute.Generate
-                        };
+                        fastBuildAllProject = (FastBuildAllProject)Activator.CreateInstance(FastBuildAllProjectType);
+                        fastBuildAllProject.Name = FastBuildAllProjectName;
+                        fastBuildAllProject.RootPath = firstProject.Project.RootPath;
+                        fastBuildAllProject.SourceRootPath = firstProject.Project.RootPath;
+                        fastBuildAllProject.IsFileNameToLower = firstProject.Project.IsFileNameToLower;
+                        fastBuildAllProject.SharpmakeProjectType = Project.ProjectTypeAttribute.Generate;
                     }
                     else
                     {
