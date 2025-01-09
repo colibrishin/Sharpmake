@@ -554,6 +554,9 @@ namespace Sharpmake.Generators.FastBuild
 
                         Strings preBuildTargets = new Strings();
 
+                        // Add the prebuild events from the dependent projects
+                        preBuildTargets.AddRange(conf.ResolvedDependencies.SelectMany(conf => conf.EventCustomPrebuildExecute.Select(arr => arr.Key.Replace("[project.Name]", conf.ProjectName))));
+
                         var fastBuildTargetLibraryDependencies = new Strings();
                         {
                             if (isLastSubConfig) // post-build steps on the last subconfig
