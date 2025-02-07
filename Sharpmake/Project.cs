@@ -31,6 +31,13 @@ namespace Sharpmake
             set { SetProperty(ref _isFileNameToLower, value); }
         }
 
+        private bool _isExportProject = false;
+        public bool IsExportProject
+        {
+            get { return _isExportProject; }
+            set { SetProperty(ref _isExportProject, value); }
+        }
+
         public string LowerName
         {
             get { return _name.ToLower(); }

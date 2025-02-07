@@ -2,6 +2,8 @@
 // Licensed under the Apache 2.0 License. See LICENSE.md in the project root for license information.
 
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Sharpmake.Generators.Apple;
 using Sharpmake.Generators.FastBuild;
 using Sharpmake.Generators.Generic;
@@ -115,6 +117,18 @@ namespace Sharpmake.Generators
                             throw new Error("Generate called with unknown DevEnv: " + devEnv);
                         }
                 }
+            }
+
+            foreach (Project.Configuration configuration in configurations)
+            {
+                List<string> dependencyProjectNames = configuration.ResolvedDependencies.Where(conf =>
+                {
+                    return !conf.Project.IsExportProject;
+                }).Select(conf => conf.ProjectName).ToList();
+
+                string outputFileName = $"{configuration.Name}.dep";
+                using StreamWriter writer = new StreamWriter(Path.Combine(project.SharpmakeCsPath, outputFileName));
+                dependencyProjectNames.ForEach(str => writer.WriteLine(str));
             }
         }
 
