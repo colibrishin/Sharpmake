@@ -121,7 +121,7 @@ namespace Sharpmake.Generators
 
             foreach (Project.Configuration configuration in configurations)
             {
-                List<string> dependencyProjectNames = configuration.ResolvedDependencies.Where(conf =>
+                List<string> dependencyProjectNames = configuration.ResolvedPublicDependencies.Where(conf =>
                 {
                     return !conf.Project.IsExportProject;
                 }).Select(conf => conf.ProjectName).ToList();
