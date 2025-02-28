@@ -1358,10 +1358,10 @@ namespace Sharpmake
         /// The list of Product IDs can be found here: https://docs.microsoft.com/en-us/visualstudio/install/workload-and-component-ids
         /// </summary>
         private static readonly string[] s_supportedVisualStudioProducts = {
+            "Microsoft.VisualStudio.Product.BuildTools",
             "Microsoft.VisualStudio.Product.Enterprise",
             "Microsoft.VisualStudio.Product.Professional",
-            "Microsoft.VisualStudio.Product.Community",
-            "Microsoft.VisualStudio.Product.BuildTools"
+            "Microsoft.VisualStudio.Product.Community"
         };
 
         private class VisualStudioVersionSorter : IComparer<VsInstallation>
