@@ -379,19 +379,41 @@ namespace Sharpmake
 
             Version version = s_visualStudioVCToolsVersionCache.GetOrAdd(visualVersion, devEnv =>
             {
-                string versionString = visualVersion.GetDefaultCompilerVersion(); // default fallback
-                try
+                List<string> versionStrings = new List<string> 
+                { 
+                    visualVersion.GetDefaultCompilerVersion() // default fallback
+                };
+
+                string toolchainPaths = Path.Combine(visualVersion.GetVisualStudioDir(), "VC", "Auxiliary", "Build");
+                
+                string defaultToolchainPath = Path.Combine(toolchainPaths, "Microsoft.VCToolsVersion.default.txt");
+                if (File.Exists(defaultToolchainPath))
                 {
-                    string toolchainFile = Path.Combine(visualVersion.GetVisualStudioDir(), "VC", "Auxiliary", "Build", "Microsoft.VCToolsVersion.default.txt");
-                    if (File.Exists(toolchainFile))
+                    using StreamReader file = new StreamReader(defaultToolchainPath);
+                    string readVersion = file.ReadLine()?.Trim();
+                    versionStrings.Add(readVersion);
+                }
+
+                foreach (string directory in Directory.EnumerateDirectories(toolchainPaths))
+                {
+                    foreach (string versionFile in Directory.EnumerateFiles(directory, "Microsoft.VCToolsVersion.*.txt"))
                     {
-                        using (StreamReader file = new StreamReader(toolchainFile))
-                            versionString = file.ReadLine().Trim();
+                        if (!File.Exists(versionFile)) continue;
+                        using StreamReader file = new StreamReader(versionFile);
+                        string readVersion = file.ReadLine()?.Trim();
+                        if (versionStrings.Contains(readVersion)) continue;
+                        versionStrings.Add(readVersion);
                     }
                 }
-                catch { }
 
-                return new Version(versionString);
+                if (versionStrings.Count == 0)
+                {
+                    Console.WriteLine("Warning: No C++ toolchain version found, fallback to the default version...");
+                }
+
+                versionStrings.Sort((l, r) => string.CompareOrdinal(r, l));
+                Console.WriteLine($"Log: Using the MSVC version as {versionStrings.First()}");
+                return new Version(versionStrings.First());
             });
 
             return version;
