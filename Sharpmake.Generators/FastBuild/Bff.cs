@@ -1191,6 +1191,7 @@ namespace Sharpmake.Generators.FastBuild
                                     using (bffGenerator.Declare("fastBuildStampArguments", fastBuildStampArguments))
                                     using (bffGenerator.Declare("fastBuildEmbeddedOutputPrefix", fastBuildEmbeddedOutputPrefix))
                                     using (bffGenerator.Declare("fastbuildConcurrencyGroupName", conf.FastBuildLinkConcurrencyGroup ?? FileGeneratorUtilities.RemoveLineTag))
+                                    using (bffGenerator.Declare("fastBuildAllowCaching", conf.FastBuildCacheAllowed ? "true" : "false"))
                                     {
                                         if (projectHasResourceFiles)
                                         {
@@ -1216,6 +1217,8 @@ namespace Sharpmake.Generators.FastBuild
                                         )
                                         {
                                             bffGenerator.Write(Template.ConfigurationFile.ObjectListBeginSection);
+
+                                            bffGenerator.Write(Template.ConfigurationFile.AllowCaching);
 
                                             if (conf.Platform.IsMicrosoft())
                                             {
@@ -1266,6 +1269,8 @@ namespace Sharpmake.Generators.FastBuild
                                         if (isOutputTypeDll && !isLastSubConfig)
                                         {
                                             bffGenerator.Write(Template.ConfigurationFile.ObjectListBeginSection);
+
+                                            bffGenerator.Write(Template.ConfigurationFile.AllowCaching);
 
                                             if (conf.Platform.IsMicrosoft())
                                             {
@@ -1360,6 +1365,8 @@ namespace Sharpmake.Generators.FastBuild
 
                                             if (outputLib)
                                             {
+                                                bffGenerator.Write(Template.ConfigurationFile.AllowCaching);
+
                                                 if (conf.Platform.IsMicrosoft())
                                                 {
                                                     bffGenerator.Write(fastBuildCompilerExtraOptions);
@@ -1778,6 +1785,8 @@ namespace Sharpmake.Generators.FastBuild
                         return "1920";
                     case Options.Vc.General.PlatformToolset.v143:
                         return "1930";
+                    case Options.Vc.General.PlatformToolset.v145:
+                        return "1950";
                     default:
                         throw new Error("LLVMVcPlatformToolset! Platform toolset override '{0}' not supported", overridenPlatformToolset);
                 }
@@ -1792,6 +1801,8 @@ namespace Sharpmake.Generators.FastBuild
                         return "1920";
                     case DevEnv.vs2022:
                         return "1930";
+                    case DevEnv.vs2026:
+                        return "1950";
                     default:
                         throw new Error("Clang-cl used with unsupported DevEnv: " + devenv.ToString());
                 }

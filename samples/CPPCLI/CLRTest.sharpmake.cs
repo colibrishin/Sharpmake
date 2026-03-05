@@ -21,7 +21,7 @@ namespace CLR_SharpmakeTest
                 OutputType.Dll,
                 Blob.NoBlob,
                 BuildSystem.MSBuild,
-                DotNetFramework.v4_6_2
+                DotNetFramework.v4_7_2
             ),
             new Target(
                 Platform.win32,
@@ -30,7 +30,7 @@ namespace CLR_SharpmakeTest
                 OutputType.Dll,
                 Blob.NoBlob,
                 BuildSystem.MSBuild,
-                DotNetFramework.v4_7_2
+                DotNetFramework.v4_8
             )
         };
     }
@@ -63,7 +63,7 @@ namespace CLR_SharpmakeTest
         public static void SharpmakeMain(Sharpmake.Arguments arguments)
         {
             KitsRootPaths.SetUseKitsRootForDevEnv(DevEnv.vs2019, KitsRootEnum.KitsRoot10, Options.Vc.General.WindowsTargetPlatformVersion.v10_0_19041_0);
-            KitsRootPaths.SetUseKitsRootForDevEnv(DevEnv.vs2022, KitsRootEnum.KitsRoot10, Options.Vc.General.WindowsTargetPlatformVersion.v10_0_22621_0);
+            KitsRootPaths.SetUseKitsRootForDevEnv(DevEnv.vs2022, KitsRootEnum.KitsRoot10, Options.Vc.General.WindowsTargetPlatformVersion.v10_0_26100_0);
 
             arguments.Generate<TheSolution>();
         }

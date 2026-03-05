@@ -101,6 +101,7 @@ namespace Sharpmake.Generators
                     case DevEnv.vs2017:
                     case DevEnv.vs2019:
                     case DevEnv.vs2022:
+                    case DevEnv.vs2026:
                         {
                             VcxprojGenerator.Generate(builder, project, configurations, projectFile, generatedFiles, skipFiles);
                             BffGenerator.Generate(builder, project, configurations, projectFile, generatedFiles, skipFiles);
@@ -169,6 +170,7 @@ namespace Sharpmake.Generators
                     case DevEnv.vs2017:
                     case DevEnv.vs2019:
                     case DevEnv.vs2022:
+                    case DevEnv.vs2026:
                         {
                             if (UtilityMethods.HasFastBuildConfig(configurations))
                             {
