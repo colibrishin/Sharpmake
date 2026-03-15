@@ -1,4 +1,4 @@
-﻿// Copyright (c) Ubisoft. All Rights Reserved.
+// Copyright (c) Ubisoft. All Rights Reserved.
 // Licensed under the Apache 2.0 License. See LICENSE.md in the project root for license information.
 
 namespace Sharpmake.Generators.VisualStudio
@@ -250,6 +250,20 @@ namespace Sharpmake.Generators.VisualStudio
 
                 public static string ProjectFilesEnd =
                 @"  </ItemGroup>
+";
+
+                /// <summary>
+                /// PropertyGroup + ItemGroup to discover *.generated.cpp at build time when conf.CustomProperties["HeaderGeneratedRoot"] is set.
+                /// </summary>
+                public static string ProjectHeaderGeneratedDiscovery =
+                @"  <PropertyGroup>
+    <_HeaderGeneratedRoot Condition=""'$(HeaderGeneratedRoot)' != ''"">$(HeaderGeneratedRoot)</_HeaderGeneratedRoot>
+    <_HeaderGeneratedRoot Condition=""'$(HeaderGeneratedRoot)' == ''"">$(MSBuildProjectDirectory)\..\..</_HeaderGeneratedRoot>
+    <_GeneratedCppDir>$(_HeaderGeneratedRoot)\Intermediate\HeaderParser\$(MSBuildProjectName)\HeaderGenerated</_GeneratedCppDir>
+  </PropertyGroup>
+  <ItemGroup>
+    <ClCompile Include=""$(_GeneratedCppDir)\**\*.generated.cpp"" />
+  </ItemGroup>
 ";
 
                 public static string ProjectFilesHeader =

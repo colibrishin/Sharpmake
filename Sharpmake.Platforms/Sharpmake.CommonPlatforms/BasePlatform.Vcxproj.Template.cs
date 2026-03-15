@@ -1,4 +1,4 @@
-﻿// Copyright (c) Ubisoft. All Rights Reserved.
+// Copyright (c) Ubisoft. All Rights Reserved.
 // Licensed under the Apache 2.0 License. See LICENSE.md in the project root for license information.
 
 namespace Sharpmake
@@ -260,7 +260,8 @@ namespace Sharpmake
     <NMakeReBuildCommandLine>cd [fastBuildWorkingDirectory]
 [conf.FastBuildCustomActionsBeforeBuildCommand]
 [fastBuildMakeCommandRebuild] </NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine>del ""[options.IntermediateDirectory]\*unity*.cpp"" &gt;NUL 2&gt;NUL
+    <NMakeCleanCommandLine>rem FastBuild clean
+del ""[options.IntermediateDirectory]\*unity*.cpp"" &gt;NUL 2&gt;NUL
 del ""[options.IntermediateDirectory]\*.obj"" &gt;NUL 2&gt;NUL
 del ""[options.IntermediateDirectory]\*.a"" &gt;NUL 2&gt;NUL
 del ""[options.IntermediateDirectory]\*.lib"" &gt;NUL 2&gt;NUL
@@ -269,7 +270,9 @@ del ""[options.OutputDirectory]\[conf.TargetFileFullName].elf"" &gt;NUL 2&gt;NUL
 del ""[options.OutputDirectory]\[conf.TargetFileFullName].exp"" &gt;NUL 2&gt;NUL
 del ""[options.OutputDirectory]\[conf.TargetFileFullName].ilk"" &gt;NUL 2&gt;NUL
 del ""[options.OutputDirectory]\[conf.TargetFileFullName].lib"" &gt;NUL 2&gt;NUL
-del ""[options.OutputDirectory]\[conf.TargetFileFullName].pdb"" &gt;NUL 2&gt;NUL</NMakeCleanCommandLine>
+del ""[options.OutputDirectory]\[conf.TargetFileFullName].pdb"" &gt;NUL 2&gt;NUL
+[conf.AdditionalNMakeCleanCommands]
+</NMakeCleanCommandLine>
     <NMakeOutput>[options.OutputFile]</NMakeOutput>
     <NMakePreprocessorDefinitions>[EscapeXML:options.PreprocessorDefinitions][EscapeXML:options.IntellisenseAdditionalDefines]</NMakePreprocessorDefinitions>
     <NMakeIncludeSearchPath>[options.NMakeIncludeSearchPath]</NMakeIncludeSearchPath>

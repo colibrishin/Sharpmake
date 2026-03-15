@@ -1139,6 +1139,9 @@ namespace Sharpmake.Generators.VisualStudio
                 fileGenerator.Write(Template.Project.ProjectFilesEnd);
             }
 
+            if (context.ProjectConfigurations.Any(conf => conf.CustomProperties.ContainsKey("HeaderGeneratedRoot")))
+                fileGenerator.Write(Template.Project.ProjectHeaderGeneratedDiscovery);
+
             foreach (var platforms in context.PresentPlatforms.Values)
                 platforms.GeneratePlatformReferences(context, fileGenerator);
         }
