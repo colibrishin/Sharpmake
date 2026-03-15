@@ -1,4 +1,4 @@
-﻿// Copyright (c) Ubisoft. All Rights Reserved.
+// Copyright (c) Ubisoft. All Rights Reserved.
 // Licensed under the Apache 2.0 License. See LICENSE.md in the project root for license information.
 
 using System;
@@ -22,6 +22,41 @@ namespace Sharpmake.Generators.FastBuild
             string globalConfigFile = masterBffFileName;
             globalConfigFile = globalConfigFile.Insert(masterBffFileName.IndexOf(FastBuildSettings.FastBuildConfigFileExtension, StringComparison.Ordinal), "-globalsettings");
             return globalConfigFile;
+        }
+
+        /// <summary>Resolve Windows SDK Lib path (um\x64;ucrt\x64) so link.exe finds ntdll.lib. Used when emitting LIB in BFF.</summary>
+        private static string GetWindowsSdkLibPathForBff()
+        {
+            string programFilesX86 = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86);
+            string kitsRoot = Path.Combine(programFilesX86, "Windows Kits", "10", "Lib");
+            string kitsBin = Path.Combine(programFilesX86, "Windows Kits", "10", "bin");
+            string latestVer = null;
+
+            if (Directory.Exists(kitsRoot))
+            {
+                latestVer = Directory.GetDirectories(kitsRoot)
+                    .OrderByDescending(d => d, StringComparer.Ordinal)
+                    .FirstOrDefault();
+            }
+            if (string.IsNullOrEmpty(latestVer) && Directory.Exists(kitsBin))
+            {
+                string binVer = Directory.GetDirectories(kitsBin)
+                    .OrderByDescending(d => d, StringComparer.Ordinal)
+                    .FirstOrDefault();
+                if (!string.IsNullOrEmpty(binVer))
+                    latestVer = Path.Combine(programFilesX86, "Windows Kits", "10", "Lib", Path.GetFileName(binVer));
+            }
+            if (string.IsNullOrEmpty(latestVer) || !Directory.Exists(latestVer))
+                return string.Empty;
+
+            var parts = new List<string>();
+            string um = Path.Combine(latestVer, "um", "x64");
+            string ucrt = Path.Combine(latestVer, "ucrt", "x64");
+            if (Directory.Exists(um))
+                parts.Add(Path.GetFullPath(um));
+            if (Directory.Exists(ucrt))
+                parts.Add(Path.GetFullPath(ucrt));
+            return parts.Count > 0 ? string.Join(";", parts) : string.Empty;
         }
 
         private class MasterBffInfo
@@ -637,6 +672,13 @@ namespace Sharpmake.Generators.FastBuild
                     throw new Error("Multiple conflicting resource compilers found in PATH! Please verify your ResourceCompiler settings.");
             }
 
+            // Append Rust+VC to PATH when provided; do not override. Final PATH = SDK (above) ; Rust ; VC.
+            if (FastBuildSettings.AdditionalGlobalEnvironmentVariables.TryGetValue("PATH", out string pathAppend) && !string.IsNullOrEmpty(pathAppend))
+            {
+                bool hasExisting = !string.IsNullOrEmpty(fastBuildPATH) && fastBuildPATH != FileGeneratorUtilities.RemoveLineTag;
+                fastBuildPATH = hasExisting ? fastBuildPATH + ";" + pathAppend : pathAppend;
+            }
+
             var allDevEnv = masterBffInfo.CompilerSettings.Values.Select(s => s.DevEnv).Distinct().ToList();
 
             string envRemoveGuards = FileGeneratorUtilities.RemoveLineTag;
@@ -660,7 +702,18 @@ namespace Sharpmake.Generators.FastBuild
             string envAdditionalVariables = FileGeneratorUtilities.RemoveLineTag;
             if (FastBuildSettings.AdditionalGlobalEnvironmentVariables.Any())
             {
-                envAdditionalVariables = string.Join(Environment.NewLine, FastBuildSettings.AdditionalGlobalEnvironmentVariables.Select(keyValue => $"        \"{keyValue.Key}={keyValue.Value}\""));
+                var additionalWithoutPath = FastBuildSettings.AdditionalGlobalEnvironmentVariables.Where(kvp => !string.Equals(kvp.Key, "PATH", StringComparison.OrdinalIgnoreCase)).ToList();
+                if (additionalWithoutPath.Count > 0)
+                {
+                    string sdkLib = GetWindowsSdkLibPathForBff();
+                    envAdditionalVariables = string.Join(Environment.NewLine, additionalWithoutPath.Select(kvp =>
+                    {
+                        string value = kvp.Value;
+                        if (string.Equals(kvp.Key, "LIB", StringComparison.OrdinalIgnoreCase) && !string.IsNullOrEmpty(sdkLib) && value.IndexOf("Windows Kits", StringComparison.OrdinalIgnoreCase) < 0)
+                            value = sdkLib + ";" + value;
+                        return $"        \"{kvp.Key}={value}\"";
+                    }));
+                }
             }
 
             using (masterBffGenerator.Declare("fastBuildProjectName", "Master"))
