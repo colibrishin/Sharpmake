@@ -274,7 +274,8 @@ namespace Sharpmake.Generators.VisualStudio
                 return solutionFileInfo.FullName;
             }
 
-            List<Solution.ResolvedProject> resolvedPathReferences = ResolveReferencesByPath(solutionProjects, solutionConfigurations[0].ProjectReferencesByPath);
+            var solutionConf = solutionConfigurations[0];
+            List<Solution.ResolvedProject> resolvedPathReferences = ResolveReferencesByPath(solution, solutionProjects, solutionConf.ProjectReferencesByPath);
 
             var guidlist = solutionProjects.Select(p => p.UserData["Guid"]);
             resolvedPathReferences = resolvedPathReferences.Where(r => !guidlist.Contains(r.UserData["Guid"])).ToList();
@@ -374,11 +375,18 @@ namespace Sharpmake.Generators.VisualStudio
                 foreach (Solution.ResolvedProject resolvedProject in solutionProjects.Concat(resolvedPathReferences).Distinct(new Solution.ResolvedProjectGuidComparer()))
                 {
                     FileInfo projectFileInfo = new FileInfo(resolvedProject.ProjectFile);
-                    using (fileGenerator.Declare("project", resolvedProject.Project))
+                    // ReadGuidFromProjectFile can return null for SDK-style .csproj; never pass null to Resolver.
+                    string projectGuidStr = resolvedProject.UserData["Guid"]?.ToString();
+                    if (string.IsNullOrEmpty(projectGuidStr)) projectGuidStr = Guid.NewGuid().ToString("D").ToUpperInvariant();
+                    string projectTypeGuidStr = resolvedProject.UserData["TypeGuid"]?.ToString();
+                    if (string.IsNullOrEmpty(projectTypeGuidStr)) projectTypeGuidStr = ReadTypeGuidFromProjectFile(resolvedProject.ProjectFile);
+                    // Path-added projects have null Project; use a dummy so Resolver does not null-ref when resolving [projectGuid] etc.
+                    object projectForDeclare = resolvedProject.Project != null ? (object)resolvedProject.Project : (object)new { Guid = projectGuidStr };
+                    using (fileGenerator.Declare("project", projectForDeclare))
                     using (fileGenerator.Declare("projectName", resolvedProject.ProjectName))
                     using (fileGenerator.Declare("projectFile", Util.PathGetRelative(solutionFileInfo.Directory.FullName, projectFileInfo.FullName)))
-                    using (fileGenerator.Declare("projectGuid", resolvedProject.UserData["Guid"]))
-                    using (fileGenerator.Declare("projectTypeGuid", resolvedProject.UserData["TypeGuid"]))
+                    using (fileGenerator.Declare("projectGuid", projectGuidStr))
+                    using (fileGenerator.Declare("projectTypeGuid", projectTypeGuidStr))
                     {
                         fileGenerator.Write(Template.Solution.ProjectBegin);
                         Strings buildDepsGuids = new Strings(resolvedProject.Configurations.SelectMany(
@@ -826,9 +834,9 @@ namespace Sharpmake.Generators.VisualStudio
             };
         }
 
-        private List<Solution.ResolvedProject> ResolveReferencesByPath(List<Solution.ResolvedProject> solutionProjects, Strings referencedProjectPaths)
+        private List<Solution.ResolvedProject> ResolveReferencesByPath(Solution solution, List<Solution.ResolvedProject> solutionProjects, Strings referencedProjectPaths)
         {
-            // solution's referenced projects
+            // solution's referenced projects (no solution folder; use root)
             var resolvedPathReferences = GetResolvedProjectsFromPaths(referencedProjectPaths).ToList();
 
             foreach (Solution.ResolvedProject resolvedProject in resolvedPathReferences)
@@ -838,26 +846,35 @@ namespace Sharpmake.Generators.VisualStudio
                 resolvedProject.UserData["Folder"] = GetSolutionFolder(resolvedProject.SolutionFolder);
             }
 
-            // user's projects references
-            var projectRefByPathInfos = solutionProjects
-                                            .SelectMany(p => p.Configurations)
-                                            .SelectMany(c => c.ProjectReferencesByPath.ProjectsInfos)
-                                            .Distinct();
+            // user's projects references: use the referencing project config's solution folder (ExportProject style)
+            var projectRefWithConfig = solutionProjects
+                .SelectMany(p => p.Configurations)
+                .SelectMany(c => c.ProjectReferencesByPath.ProjectsInfos.Select(pi => (pi, c)))
+                .GroupBy(x => x.pi.projectFilePath)
+                .Select(g => g.First())
+                .ToList();
 
-            foreach (var projectRefByPathInfo in projectRefByPathInfos)
+            foreach (var (projectRefByPathInfo, conf) in projectRefWithConfig)
             {
                 var resolvedProject = GetResolvedProjectFromPath(projectRefByPathInfo.projectFilePath);
 
                 var projectGuid = projectRefByPathInfo.projectGuid;
                 if (projectGuid == Guid.Empty)
-                    projectGuid = new Guid(ReadGuidFromProjectFile(projectRefByPathInfo.projectFilePath));
+                {
+                    string guidStr = ReadGuidFromProjectFile(projectRefByPathInfo.projectFilePath);
+                    projectGuid = !string.IsNullOrEmpty(guidStr) ? new Guid(guidStr) : Guid.NewGuid();
+                }
                 resolvedProject.UserData["Guid"] = projectGuid.ToString("D").ToUpperInvariant();
 
                 var projectTypeGuid = projectRefByPathInfo.projectTypeGuid;
                 if (projectTypeGuid == Guid.Empty)
-                    projectTypeGuid = new Guid(ReadTypeGuidFromProjectFile(projectRefByPathInfo.projectFilePath)); // currently, just use the extension
+                {
+                    string typeGuidStr = ReadTypeGuidFromProjectFile(projectRefByPathInfo.projectFilePath);
+                    projectTypeGuid = !string.IsNullOrEmpty(typeGuidStr) ? new Guid(typeGuidStr) : Guid.Empty;
+                }
                 resolvedProject.UserData["TypeGuid"] = projectTypeGuid.ToString("D").ToUpperInvariant();
 
+                resolvedProject.SolutionFolder = conf.GetSolutionFolder(solution.Name);
                 resolvedProject.UserData["Folder"] = GetSolutionFolder(resolvedProject.SolutionFolder);
                 resolvedPathReferences.Add(resolvedProject);
             }

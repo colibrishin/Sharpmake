@@ -1613,6 +1613,12 @@ namespace Sharpmake
             public string FastBuildCustomActionsBeforeBuildCommand = RemoveLineTag;
 
             /// <summary>
+            /// Optional command line(s) appended to NMakeCleanCommandLine for FastBuild/Makefile configs (e.g. remove generated headers dir).
+            /// Use RemoveLineTag or null to omit. Each line is appended after the default clean commands.
+            /// </summary>
+            public string AdditionalNMakeCleanCommands = RemoveLineTag;
+
+            /// <summary>
             /// Gets or sets the name of the FASTBuild BFF file.
             /// </summary>
             public string BffFileName = "[conf.ProjectFileName]";
